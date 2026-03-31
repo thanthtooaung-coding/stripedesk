@@ -1,17 +1,26 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
-import { useRouter } from "vue-router";
-import { useAuthStore } from "@/stores/auth";
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-const auth = useAuthStore();
-const router = useRouter();
+const router = useRouter()
 
-const form = reactive({ email: "", password: "" });
-const showPassword = ref(false);
+const form = reactive({ name: '', email: '', password: '', confirmPassword: '' })
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
+const errors = reactive({ name: '', email: '', password: '', confirmPassword: '' })
 
-async function handleLogin() {
-  const ok = await auth.login(form.email, form.password);
-  if (ok) router.push("/dashboard");
+function validate() {
+  errors.name = form.name.trim() ? '' : 'Full name is required'
+  errors.email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) ? '' : 'Enter a valid email'
+  errors.password = form.password.length >= 8 ? '' : 'Password must be at least 8 characters'
+  errors.confirmPassword = form.confirmPassword === form.password ? '' : 'Passwords do not match'
+  return !errors.name && !errors.email && !errors.password && !errors.confirmPassword
+}
+
+function handleRegister() {
+  if (!validate()) return
+  // TODO: wire up registration API
+  router.push('/login')
 }
 </script>
 
@@ -35,10 +44,7 @@ async function handleLogin() {
       <!-- Dot grid -->
       <div
         class="absolute inset-0 pointer-events-none"
-        style="
-          background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
-          background-size: 28px 28px;
-        "
+        style="background-image: radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px); background-size: 28px 28px"
       />
 
       <!-- Logo — top-left -->
@@ -66,40 +72,46 @@ async function handleLogin() {
         <h2
           class="text-[44px] font-extrabold text-white leading-[1.12] tracking-[-1.5px] mb-[18px]"
         >
-          Built for speed.<br />
+          Get started<br />
           <span class="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">
-            Payments made simple.
+            in seconds.
           </span>
         </h2>
         <p class="text-base text-white/60 leading-relaxed mb-9">
-          Manage products, subscriptions, and invoices<br />in one elegant dashboard.
+          Create your account and start managing<br />payments with ease.
         </p>
 
-        <!-- Feature badges -->
-        <div class="flex flex-wrap justify-center gap-2.5">
+        <!-- Steps -->
+        <div class="flex flex-col gap-3 text-left">
           <div
-            class="inline-flex items-center gap-2 bg-white/[0.08] border border-white/[0.14] backdrop-blur-md rounded-full px-4 py-[7px] text-[13px] font-medium text-white/85"
+            class="flex items-center gap-3 bg-white/[0.06] border border-white/[0.10] backdrop-blur-md rounded-xl px-4 py-3"
           >
-            <span
-              class="w-[7px] h-[7px] rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] shrink-0"
-            />
-            Stripe Checkout
+            <div
+              class="w-7 h-7 rounded-full bg-[#6c47ff] flex items-center justify-center text-white text-[12px] font-bold shrink-0"
+            >
+              1
+            </div>
+            <span class="text-[13px] text-white/75">Create your account</span>
           </div>
           <div
-            class="inline-flex items-center gap-2 bg-white/[0.08] border border-white/[0.14] backdrop-blur-md rounded-full px-4 py-[7px] text-[13px] font-medium text-white/85"
+            class="flex items-center gap-3 bg-white/[0.06] border border-white/[0.10] backdrop-blur-md rounded-xl px-4 py-3"
           >
-            <span
-              class="w-[7px] h-[7px] rounded-full bg-blue-400 shadow-[0_0_8px_#60a5fa] shrink-0"
-            />
-            JWT Auth
+            <div
+              class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-[12px] font-bold shrink-0"
+            >
+              2
+            </div>
+            <span class="text-[13px] text-white/45">Connect your Stripe account</span>
           </div>
           <div
-            class="inline-flex items-center gap-2 bg-white/[0.08] border border-white/[0.14] backdrop-blur-md rounded-full px-4 py-[7px] text-[13px] font-medium text-white/85"
+            class="flex items-center gap-3 bg-white/[0.06] border border-white/[0.10] backdrop-blur-md rounded-xl px-4 py-3"
           >
-            <span
-              class="w-[7px] h-[7px] rounded-full bg-purple-400 shadow-[0_0_8px_#c084fc] shrink-0"
-            />
-            Role-based
+            <div
+              class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-[12px] font-bold shrink-0"
+            >
+              3
+            </div>
+            <span class="text-[13px] text-white/45">Manage everything from your dashboard</span>
           </div>
         </div>
       </div>
@@ -107,13 +119,13 @@ async function handleLogin() {
       <!-- Stats bar — pinned bottom -->
       <div class="absolute bottom-9 inset-x-0 flex items-center justify-center z-10">
         <div class="flex flex-col items-center px-8">
-          <span class="text-[20px] font-bold text-white tracking-[-0.5px] leading-none mb-1">99.9%</span>
-          <span class="text-[11px] font-medium tracking-[0.5px] text-white/45 uppercase">Uptime</span>
+          <span class="text-[20px] font-bold text-white tracking-[-0.5px] leading-none mb-1">Free</span>
+          <span class="text-[11px] font-medium tracking-[0.5px] text-white/45 uppercase">To start</span>
         </div>
         <div class="w-px h-8 bg-white/15" />
         <div class="flex flex-col items-center px-8">
-          <span class="text-[20px] font-bold text-white tracking-[-0.5px] leading-none mb-1">256-bit</span>
-          <span class="text-[11px] font-medium tracking-[0.5px] text-white/45 uppercase">Encryption</span>
+          <span class="text-[20px] font-bold text-white tracking-[-0.5px] leading-none mb-1">2 min</span>
+          <span class="text-[11px] font-medium tracking-[0.5px] text-white/45 uppercase">Setup</span>
         </div>
         <div class="w-px h-8 bg-white/15" />
         <div class="flex flex-col items-center px-8">
@@ -141,58 +153,45 @@ async function handleLogin() {
           <span class="text-[18px] font-bold text-white tracking-tight">StripeDesk</span>
         </div>
 
-        <div class="mb-9">
+        <div class="mb-8">
           <h1 class="text-[30px] font-bold text-[#f0f0ff] tracking-[-0.5px] mb-1.5">
-            Welcome back
+            Create an account
           </h1>
-          <p class="text-[15px] text-[#6b6b8a]">Sign in to your account</p>
+          <p class="text-[15px] text-[#6b6b8a]">Start managing payments today</p>
         </div>
 
-        <!-- Error alert -->
-        <div
-          v-if="auth.error"
-          class="flex items-start gap-3 mb-6 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-[14px] text-red-400"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="shrink-0 mt-0.5"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          <span class="flex-1">{{ auth.error }}</span>
-          <button
-            type="button"
-            @click="auth.error = null"
-            class="text-red-400/60 hover:text-red-400 transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
+        <form @submit.prevent="handleRegister" novalidate>
+          <!-- Full name -->
+          <div class="mb-5">
+            <label class="field-label">Full name</label>
+            <div class="input-wrapper">
+              <svg
+                class="input-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="8" r="4" />
+                <path d="M20 21a8 8 0 1 0-16 0" />
+              </svg>
+              <input
+                v-model="form.name"
+                type="text"
+                placeholder="Jane Smith"
+                autocomplete="name"
+                class="field-input"
+                :class="{ 'field-input--error': errors.name }"
+              />
+            </div>
+            <p v-if="errors.name" class="field-error">{{ errors.name }}</p>
+          </div>
 
-        <form @submit.prevent="handleLogin" novalidate>
           <!-- Email -->
           <div class="mb-5">
             <label class="field-label">Email address</label>
@@ -217,14 +216,15 @@ async function handleLogin() {
                 type="email"
                 placeholder="you@example.com"
                 autocomplete="email"
-                required
                 class="field-input"
+                :class="{ 'field-input--error': errors.email }"
               />
             </div>
+            <p v-if="errors.email" class="field-error">{{ errors.email }}</p>
           </div>
 
           <!-- Password -->
-          <div class="mb-7">
+          <div class="mb-5">
             <label class="field-label">Password</label>
             <div class="input-wrapper">
               <svg
@@ -246,15 +246,11 @@ async function handleLogin() {
                 v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="••••••••"
-                autocomplete="current-password"
-                required
+                autocomplete="new-password"
                 class="field-input pr-11"
+                :class="{ 'field-input--error': errors.password }"
               />
-              <button
-                type="button"
-                @click="showPassword = !showPassword"
-                class="eye-toggle"
-              >
+              <button type="button" @click="showPassword = !showPassword" class="eye-toggle">
                 <svg
                   v-if="!showPassword"
                   xmlns="http://www.w3.org/2000/svg"
@@ -289,32 +285,85 @@ async function handleLogin() {
                 </svg>
               </button>
             </div>
+            <p v-if="errors.password" class="field-error">{{ errors.password }}</p>
           </div>
 
-          <button type="submit" :disabled="auth.loading" class="submit-btn">
-            <svg
-              v-if="auth.loading"
-              class="animate-spin mr-2 shrink-0"
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-            </svg>
-            {{ auth.loading ? "Signing in…" : "Sign in" }}
-          </button>
+          <!-- Confirm password -->
+          <div class="mb-7">
+            <label class="field-label">Confirm password</label>
+            <div class="input-wrapper">
+              <svg
+                class="input-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <input
+                v-model="form.confirmPassword"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                placeholder="••••••••"
+                autocomplete="new-password"
+                class="field-input pr-11"
+                :class="{ 'field-input--error': errors.confirmPassword }"
+              />
+              <button
+                type="button"
+                @click="showConfirmPassword = !showConfirmPassword"
+                class="eye-toggle"
+              >
+                <svg
+                  v-if="!showConfirmPassword"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <svg
+                  v-else
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                  />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              </button>
+            </div>
+            <p v-if="errors.confirmPassword" class="field-error">{{ errors.confirmPassword }}</p>
+          </div>
+
+          <button type="submit" class="submit-btn">Create account</button>
         </form>
 
         <p class="mt-6 text-center text-[14px] text-[#6b6b8a]">
-          Don't have an account?
-          <router-link to="/register" class="text-[#6c47ff] hover:underline font-medium">
-            Create one
+          Already have an account?
+          <router-link to="/login" class="text-[#6c47ff] hover:underline font-medium">
+            Sign in
           </router-link>
         </p>
 
@@ -386,6 +435,20 @@ async function handleLogin() {
   box-shadow: 0 0 0 3px rgba(108, 71, 255, 0.2);
 }
 
+.field-input--error {
+  border-color: #f87171 !important;
+}
+
+.field-input--error:focus {
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.2) !important;
+}
+
+.field-error {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #f87171;
+}
+
 .eye-toggle {
   position: absolute;
   right: 14px;
@@ -424,13 +487,8 @@ async function handleLogin() {
     box-shadow 0.2s;
 }
 
-.submit-btn:hover:not(:disabled) {
+.submit-btn:hover {
   opacity: 0.9;
   box-shadow: 0 6px 28px rgba(108, 71, 255, 0.6);
-}
-
-.submit-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
 }
 </style>
