@@ -1,11 +1,21 @@
 <script setup lang="ts">
-import { reactive } from "vue";
+import { computed } from "vue";
+import { useRoute } from "vue-router";
 import AuthLayout from "@/components/auth/AuthLayout.vue";
-import FormTextInput from "@/components/common/form-input/FormTextInput.vue";
-import AppButton from "@/components/ui/AppButton.vue";
+import ResetPasswordForm from "@/components/auth/ResetPasswordForm.vue";
 import AuthFormHeader from "@/components/ui/AuthFormHeader.vue";
 
-const form = reactive({ password: "", confirmPassword: "" });
+const route = useRoute();
+
+const email = computed(() => {
+  const value = route.query.email;
+  return typeof value === "string" ? value : "";
+});
+
+const token = computed(() => {
+  const value = route.query.token;
+  return typeof value === "string" ? value : "";
+});
 </script>
 
 <template>
@@ -33,24 +43,6 @@ const form = reactive({ password: "", confirmPassword: "" });
 
     <AuthFormHeader title="Create a new password" subtitle="Use at least 8 characters." compact />
 
-    <form class="space-y-6">
-      <FormTextInput
-        v-model="form.password"
-        type="password"
-        label="New password"
-        placeholder="••••••••"
-        autocomplete="new-password"
-      />
-
-      <FormTextInput
-        v-model="form.confirmPassword"
-        type="password"
-        label="Confirm password"
-        placeholder="••••••••"
-        autocomplete="new-password"
-      />
-
-      <AppButton type="submit">Reset password</AppButton>
-    </form>
+    <ResetPasswordForm :email="email" :token="token" />
   </AuthLayout>
 </template>

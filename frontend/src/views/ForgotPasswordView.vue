@@ -1,11 +1,7 @@
 <script setup lang="ts">
-import { reactive } from "vue";
 import AuthLayout from "@/components/auth/AuthLayout.vue";
-import FormTextInput from "@/components/common/form-input/FormTextInput.vue";
-import AppButton from "@/components/ui/AppButton.vue";
+import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm.vue";
 import AuthFormHeader from "@/components/ui/AuthFormHeader.vue";
-
-const form = reactive({ email: "" });
 </script>
 
 <template>
@@ -37,17 +33,7 @@ const form = reactive({ email: "" });
       compact
     />
 
-    <form class="space-y-6">
-      <FormTextInput
-        v-model="form.email"
-        type="email"
-        label="Email address"
-        placeholder="you@example.com"
-        autocomplete="email"
-      />
-
-      <AppButton type="submit">Send recovery link</AppButton>
-    </form>
+    <ForgotPasswordForm />
 
     <p class="mt-6 text-center text-sm text-slate-500">
       Return to

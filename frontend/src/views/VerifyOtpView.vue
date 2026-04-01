@@ -4,11 +4,23 @@ import { useRoute } from "vue-router";
 import AuthLayout from "@/components/auth/AuthLayout.vue";
 import VerifyOTPForm from "@/components/auth/VerifyOTPForm.vue";
 import AuthFormHeader from "@/components/ui/AuthFormHeader.vue";
+import type { AuthIntent } from "@/type/auth.type";
 
 const route = useRoute();
+
 const email = computed(() => {
   const value = route.query.email;
   return typeof value === "string" ? value : "";
+});
+
+const intent = computed<AuthIntent>(() => {
+  const value = route.query.intent;
+
+  if (value === "reset_password" || value === "password_reset") {
+    return "reset_password";
+  }
+
+  return "registration";
 });
 </script>
 
@@ -39,6 +51,6 @@ const email = computed(() => {
 
     <AuthFormHeader title="Verify OTP" subtitle="Enter the code sent to your email." compact />
 
-    <VerifyOTPForm :email="email" />
+    <VerifyOTPForm :email="email" :intent="intent" />
   </AuthLayout>
 </template>

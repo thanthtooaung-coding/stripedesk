@@ -1,4 +1,4 @@
-export type AuthIntent = "registration" | "account_activation" | "password_reset";
+export type AuthIntent = "registration" | "reset_password";
 export type UserRole = "admin" | "user";
 
 export interface ApiErrorBody {
@@ -8,6 +8,17 @@ export interface ApiErrorBody {
     message: string;
     intent?: string | null;
   };
+}
+
+export interface ResendOtpRequest {
+  email: string;
+  intent: AuthIntent;
+}
+
+export interface ResendOtpPayload {
+  status: string;
+  requires_verification: boolean;
+  intent: AuthIntent;
 }
 
 export interface ApiSuccessResponse<T> {
@@ -42,6 +53,10 @@ export interface ResetPasswordRequest {
   new_password: string;
 }
 
+export interface LoginPayload {
+  requires_verification: boolean;
+}
+
 export interface TokenPayload {
   access_token: string;
   token_type: string;
@@ -60,7 +75,7 @@ export interface ForgotPayload {
 
 export interface VerifyOtpResetPayload {
   reset_token: string;
-  reset_expires_at: string;
+  intent: AuthIntent;
 }
 
 export interface ResetPasswordPayload extends TokenPayload {
@@ -75,7 +90,7 @@ export interface UserProfile {
   created_at: string;
 }
 
-export type LoginResponse = ApiSuccessResponse<TokenPayload>;
+export type LoginResponse = ApiSuccessResponse<LoginPayload>;
 export type RegisterResponse = ApiSuccessResponse<RegisterPayload>;
 export type ForgotResponse = ApiSuccessResponse<ForgotPayload>;
 export type VerifyOtpTokenResponse = ApiSuccessResponse<TokenPayload>;
@@ -83,3 +98,4 @@ export type VerifyOtpResetResponse = ApiSuccessResponse<VerifyOtpResetPayload>;
 export type VerifyOtpResponse = VerifyOtpTokenResponse | VerifyOtpResetResponse;
 export type ResetPasswordResponse = ApiSuccessResponse<ResetPasswordPayload>;
 export type UserProfileResponse = ApiSuccessResponse<UserProfile>;
+export type ResendOtpResponse = ApiSuccessResponse<ResendOtpPayload>;

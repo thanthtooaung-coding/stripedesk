@@ -5,6 +5,7 @@ import type {
   ForgotRequest,
   LoginRequest,
   RegisterRequest,
+  ResendOtpRequest,
   ResetPasswordRequest,
   VerifyOtpRequest,
 } from "@/type/auth.type";
@@ -49,5 +50,11 @@ export function useMeQuery(enabled: MaybeRefOrGetter<boolean> = true) {
     queryKey: authQueryKeys.me(),
     queryFn: () => authService.me(),
     enabled: computed(() => toValue(enabled)),
+  });
+}
+
+export function useResendOtpMutation() {
+  return useMutation({
+    mutationFn: (payload: ResendOtpRequest) => authService.resendOtp(payload),
   });
 }

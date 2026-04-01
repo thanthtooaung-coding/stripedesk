@@ -10,13 +10,6 @@ export interface AuthUser {
   role: UserRole;
 }
 
-interface LoginResponse {
-  token?: string;
-  access_token?: string;
-  user?: AuthUser;
-}
-
-const TOKEN_KEY = "token";
 const USER_KEY = "user";
 
 function readStoredUser(): AuthUser | null {
@@ -35,18 +28,17 @@ function readStoredUser(): AuthUser | null {
 }
 
 export const useAuthStore = defineStore("auth", () => {
-  const token = ref<string | null>(localStorage.getItem(TOKEN_KEY));
   const user = ref<AuthUser | null>(readStoredUser());
   const loading = ref(false);
   const error = ref<string | null>(null);
 
-  const isAuthenticated = computed(() => Boolean(token.value));
+  const token = ref<string | null>(null);
+  const isAuthenticated = computed(() => Boolean(user.value));
   const role = computed<UserRole>(() => user.value?.role ?? "user");
 
-  function setSession(nextToken: string, nextUser: AuthUser) {
-    token.value = nextToken;
+  function setSession(nextUser: AuthUser) {
     user.value = nextUser;
-    localStorage.setItem(TOKEN_KEY, nextToken);
+    error.value = null;
     localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
   }
 
@@ -61,7 +53,9 @@ export const useAuthStore = defineStore("auth", () => {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = (await response.json().catch(() => null)) as LoginResponse | null;
+      const data = (await response.json().catch(() => null)) as
+        | { error?: string | { message?: string } }
+        | null;
 
       if (!response.ok) {
         error.value =
@@ -71,15 +65,6 @@ export const useAuthStore = defineStore("auth", () => {
         return false;
       }
 
-      const nextToken = data?.token ?? data?.access_token;
-      const nextUser = data?.user;
-
-      if (!nextToken || !nextUser) {
-        error.value = "Login response was incomplete.";
-        return false;
-      }
-
-      setSession(nextToken, nextUser);
       return true;
     } catch {
       error.value = "Network error. Please try again.";
@@ -90,10 +75,8 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   function logout() {
-    token.value = null;
     user.value = null;
     error.value = null;
-    localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
   }
 
@@ -109,6 +92,7 @@ export const useAuthStore = defineStore("auth", () => {
     login,
     logout,
     role,
+    setSession,
     token,
     user,
   };
