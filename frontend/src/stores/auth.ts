@@ -1,55 +1,115 @@
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from "vue";
+import { defineStore } from "pinia";
 
-interface User {
-  id: number
-  name: string
-  email: string
-  role: string
+export type UserRole = "admin" | "user";
+
+export interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
 }
 
-export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(localStorage.getItem('token'))
-  const user = ref<User | null>(JSON.parse(localStorage.getItem('user') ?? 'null'))
-  const loading = ref(false)
-  const error = ref<string | null>(null)
+interface LoginResponse {
+  token?: string;
+  access_token?: string;
+  user?: AuthUser;
+}
+
+const TOKEN_KEY = "token";
+const USER_KEY = "user";
+
+function readStoredUser(): AuthUser | null {
+  const raw = localStorage.getItem(USER_KEY);
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as AuthUser;
+  } catch {
+    localStorage.removeItem(USER_KEY);
+    return null;
+  }
+}
+
+export const useAuthStore = defineStore("auth", () => {
+  const token = ref<string | null>(localStorage.getItem(TOKEN_KEY));
+  const user = ref<AuthUser | null>(readStoredUser());
+  const loading = ref(false);
+  const error = ref<string | null>(null);
+
+  const isAuthenticated = computed(() => Boolean(token.value));
+  const role = computed<UserRole>(() => user.value?.role ?? "user");
+
+  function setSession(nextToken: string, nextUser: AuthUser) {
+    token.value = nextToken;
+    user.value = nextUser;
+    localStorage.setItem(TOKEN_KEY, nextToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+  }
 
   async function login(email: string, password: string): Promise<boolean> {
-    loading.value = true
-    error.value = null
-    try {
-      const res = await fetch('/api/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
+    loading.value = true;
+    error.value = null;
 
-      if (!res.ok) {
-        const data = await res.json()
-        error.value = data.error ?? 'Login failed'
-        return false
+    try {
+      const response = await fetch("/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = (await response.json().catch(() => null)) as LoginResponse | null;
+
+      if (!response.ok) {
+        error.value =
+          (data as { error?: string | { message?: string } } | null)?.error instanceof Object
+            ? (data as { error?: { message?: string } }).error?.message ?? "Login failed"
+            : (data as { error?: string } | null)?.error ?? "Login failed";
+        return false;
       }
 
-      const data = await res.json()
-      token.value = data.token
-      user.value = data.user
-      localStorage.setItem('token', data.token)
-      localStorage.setItem('user', JSON.stringify(data.user))
-      return true
+      const nextToken = data?.token ?? data?.access_token;
+      const nextUser = data?.user;
+
+      if (!nextToken || !nextUser) {
+        error.value = "Login response was incomplete.";
+        return false;
+      }
+
+      setSession(nextToken, nextUser);
+      return true;
     } catch {
-      error.value = 'Network error. Please try again.'
-      return false
+      error.value = "Network error. Please try again.";
+      return false;
     } finally {
-      loading.value = false
+      loading.value = false;
     }
   }
 
   function logout() {
-    token.value = null
-    user.value = null
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
+    token.value = null;
+    user.value = null;
+    error.value = null;
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
   }
 
-  return { token, user, loading, error, login, logout }
-})
+  function clearError() {
+    error.value = null;
+  }
+
+  return {
+    clearError,
+    error,
+    isAuthenticated,
+    loading,
+    login,
+    logout,
+    role,
+    token,
+    user,
+  };
+});
