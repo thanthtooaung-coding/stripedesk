@@ -6,6 +6,7 @@ import type {
   ForgotResponse,
   LoginRequest,
   LoginResponse,
+  RefreshResponse,
   RegisterRequest,
   RegisterResponse,
   ResendOtpRequest,
@@ -56,6 +57,11 @@ export const authService = {
 
   async resendOtp(payload: ResendOtpRequest) {
     const { data } = await api.post<ResendOtpResponse>("/auth/resend", payload);
+    return data;
+  },
+
+  async refresh() {
+    const { data } = await api.post<RefreshResponse>("/auth/refresh");
     return data;
   },
 };

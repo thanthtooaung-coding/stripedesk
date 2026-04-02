@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import MainLayout from "@/components/layout/MainLayout.vue";
 import { useAuthStore } from "@/stores/auth";
 
 interface NavItem {
@@ -12,16 +12,7 @@ const auth = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 
-const userNav = computed<NavItem[]>(() => [
-  { label: "Dashboard", to: "/dashboard" },
-  { label: "Shop", to: "/shop" },
-  { label: "Invoices", to: "/invoices" },
-  { label: "Receipts", to: "/receipts" },
-]);
-
-const adminNav = computed<NavItem[]>(() => [{ label: "Admin", to: "/admin" }]);
-
-const navigation = computed(() => (auth.role === "admin" ? adminNav.value : userNav.value));
+const adminNav: NavItem[] = [{ label: "Admin", to: "/admin" }];
 
 async function handleLogout() {
   auth.logout();
@@ -30,7 +21,11 @@ async function handleLogout() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100">
+  <MainLayout v-if="auth.role !== 'admin'">
+    <router-view />
+  </MainLayout>
+
+  <div v-else class="min-h-screen bg-slate-950 text-slate-100">
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.24),transparent_40%)]" />
 
     <header class="sticky top-0 z-20 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
@@ -60,7 +55,7 @@ async function handleLogout() {
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center">
           <nav class="flex flex-wrap gap-2">
             <router-link
-              v-for="item in navigation"
+              v-for="item in adminNav"
               :key="item.to"
               :to="item.to"
               class="rounded-full border px-4 py-2 text-sm transition-colors"

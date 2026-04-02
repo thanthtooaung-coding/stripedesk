@@ -29,6 +29,14 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    authCookie:
+      type: apiKey
+      in: cookie
+      name: stripedesk_access_token
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: stripedesk_refresh_token
   schemas:
     ErrorBody:
       type: object
@@ -99,7 +107,7 @@ components:
           example: "123456"
         intent:
           type: string
-          enum: [registration, account_activation, password_reset]
+          enum: [registration, account_activation, reset_password]
     ResetPasswordRequest:
       type: object
       required: [email, reset_token, new_password]
@@ -128,6 +136,21 @@ components:
         expires_in:
           type: integer
           example: 86400
+    RefreshResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          required: [status]
+          properties:
+            status:
+              type: string
+              enum: [ok]
+              example: ok
     LoginResponse:
       type: object
       required: [success, data]
@@ -136,7 +159,27 @@ components:
           type: boolean
           example: true
         data:
-          $ref: '#/components/schemas/TokenPayload'
+          type: object
+          properties:
+            requires_verification:
+              type: boolean
+              example: false
+    LoginVerificationRequiredResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            requires_verification:
+              type: boolean
+              example: true
+            intent:
+              type: string
+              enum: [registration, account_activation]
     RegisterResponse:
       type: object
       required: [success, data]
@@ -170,6 +213,36 @@ components:
             status:
               type: string
               example: ok
+    ResendRequest:
+      type: object
+      required: [email, intent]
+      properties:
+        email:
+          type: string
+          format: email
+          example: jane@stripedesk.local
+        intent:
+          type: string
+          enum: [registration, account_activation, reset_password]
+    ResendResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              example: ok
+            requires_verification:
+              type: boolean
+              example: true
+            intent:
+              type: string
+              enum: [registration, account_activation, reset_password]
     VerifyOtpTokenResponse:
       type: object
       required: [success, data]
@@ -178,7 +251,11 @@ components:
           type: boolean
           example: true
         data:
-          $ref: '#/components/schemas/TokenPayload'
+          type: object
+          properties:
+            requires_verification:
+              type: boolean
+              example: false
     VerifyOtpResetResponse:
       type: object
       required: [success, data]
@@ -204,13 +281,11 @@ components:
           type: boolean
           example: true
         data:
-          allOf:
-            - $ref: '#/components/schemas/TokenPayload'
-            - type: object
-              properties:
-                status:
-                  type: string
-                  example: ok
+          type: object
+          properties:
+            status:
+              type: string
+              example: ok
     UserProfile:
       type: object
       properties:
@@ -238,7 +313,7 @@ components:
           type: boolean
           example: true
         data:
-          $ref: '#/components/schemas/UserProfile'
+          $ref: "#/components/schemas/UserProfile"
     ProductCatalogItem:
       type: object
       properties:
@@ -272,7 +347,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/ProductCatalogItem'
+            $ref: "#/components/schemas/ProductCatalogItem"
     CheckoutSessionRequest:
       type: object
       required: [product_id]
@@ -314,7 +389,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/InvoiceSummary'
+            $ref: "#/components/schemas/InvoiceSummary"
     InvoiceDetail:
       type: object
       additionalProperties: true
@@ -337,7 +412,7 @@ components:
           type: boolean
           example: true
         data:
-          $ref: '#/components/schemas/InvoiceDetail'
+          $ref: "#/components/schemas/InvoiceDetail"
     ReceiptDetail:
       type: object
       additionalProperties: true
@@ -359,7 +434,7 @@ components:
           type: boolean
           example: true
         data:
-          $ref: '#/components/schemas/ReceiptDetail'
+          $ref: "#/components/schemas/ReceiptDetail"
     AdminUser:
       type: object
       properties:
@@ -389,7 +464,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/AdminUser'
+            $ref: "#/components/schemas/AdminUser"
     AdminCreateUserRequest:
       type: object
       required: [name, email, password]
@@ -462,7 +537,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/AdminProduct'
+            $ref: "#/components/schemas/AdminProduct"
     AdminProductUpsertRequest:
       type: object
       properties:
@@ -531,7 +606,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Currency'
+            $ref: "#/components/schemas/Currency"
     CurrencyCreateRequest:
       type: object
       required: [code, name]
@@ -595,54 +670,86 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/StripeLog'
+            $ref: "#/components/schemas/StripeLog"
   responses:
     BadRequest:
       description: Bad request or validation error
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorBody'
+            $ref: "#/components/schemas/ErrorBody"
     Unauthorized:
       description: Missing, invalid, or expired JWT
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorBody'
+            $ref: "#/components/schemas/ErrorBody"
     Forbidden:
       description: Insufficient permissions or blocked flow
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorBody'
+            $ref: "#/components/schemas/ErrorBody"
     NotFound:
       description: Resource not found
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorBody'
+            $ref: "#/components/schemas/ErrorBody"
 paths:
   /api/v1/auth/login:
     post:
       tags: [Auth]
       summary: Login with email and password
+      description: |
+        On successful verified login, the API sets both `stripedesk_access_token`
+        and `stripedesk_refresh_token` HttpOnly cookies. The JSON body no longer
+        returns token values.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: "#/components/schemas/LoginRequest"
       responses:
-        '200':
-          description: Login succeeded
+        "200":
+          description: Login succeeded or verification required
+          headers:
+            Set-Cookie:
+              description: Set on verified login with the access and refresh auth cookies.
+              schema:
+                type: string
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                oneOf:
+                  - $ref: "#/components/schemas/LoginResponse"
+                  - $ref: "#/components/schemas/LoginVerificationRequiredResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access and refresh tokens (cookie-only)
+      description: |
+        Reads the refresh JWT from the **refresh HttpOnly cookie** only (no token in the request body). Issues new access and refresh tokens and returns them **only** via `Set-Cookie` headers, same as login. The JSON body does not contain tokens â€” only `{ "data": { "status": "ok" } }` on success.
+
+        Call this with `credentials: 'include'` (fetch) or equivalent so the browser sends cookies cross-origin when `CORS_ALLOW_ORIGIN` and cookie `SameSite`/`Secure` allow it.
+      security: []
+      responses:
+        "200":
+          description: New tokens set on cookies; no tokens in JSON
+          headers:
+            Set-Cookie:
+              description: Updated access and refresh auth cookies.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/v1/auth/register:
     post:
       tags: [Auth]
@@ -653,16 +760,40 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RegisterRequest'
+              $ref: "#/components/schemas/RegisterRequest"
       responses:
-        '201':
+        "201":
           description: Registration succeeded
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RegisterResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: "#/components/schemas/RegisterResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /api/v1/auth/resend:
+    post:
+      tags: [Auth]
+      summary: Resend OTP
+      description: Resends the OTP for registration, account activation, or password reset.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResendRequest"
+      responses:
+        "200":
+          description: OTP resent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResendResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/v1/auth/forgot:
     post:
       tags: [Auth]
@@ -673,16 +804,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ForgotRequest'
+              $ref: "#/components/schemas/ForgotRequest"
       responses:
-        '200':
+        "200":
           description: OTP issued
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ForgotResponse'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: "#/components/schemas/ForgotResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/v1/auth/verify-otp:
     post:
       tags: [Auth]
@@ -691,78 +822,97 @@ paths:
         Supported intents:
         - registration
         - account_activation
-        - password_reset
+        - reset_password
+
+        For `registration` and `account_activation`, the API sets the auth cookie in the
+        `Set-Cookie` response header instead of returning `access_token` in the body.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VerifyOtpRequest'
+              $ref: "#/components/schemas/VerifyOtpRequest"
       responses:
-        '200':
+        "200":
           description: OTP verified
+          headers:
+            Set-Cookie:
+              description: Set for registration/account_activation flows after successful verification with access and refresh auth cookies.
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/VerifyOtpTokenResponse'
-                  - $ref: '#/components/schemas/VerifyOtpResetResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                  - $ref: "#/components/schemas/VerifyOtpTokenResponse"
+                  - $ref: "#/components/schemas/VerifyOtpResetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /api/v1/auth/reset-password:
     post:
       tags: [Auth]
       summary: Reset password using a verified reset token
-      description: Available only for user accounts.
+      description: |
+        Available only for user accounts.
+
+        On success, the API sets both auth cookies in the `Set-Cookie` response
+        header instead of returning token fields in the body.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResetPasswordRequest'
+              $ref: "#/components/schemas/ResetPasswordRequest"
       responses:
-        '200':
+        "200":
           description: Password reset succeeded
+          headers:
+            Set-Cookie:
+              description: Set on successful password reset with access and refresh auth cookies.
+              schema:
+                type: string
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResetPasswordResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: "#/components/schemas/ResetPasswordResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/v1/auth/me:
     get:
       tags: [Auth]
       summary: Get authenticated user profile
       security:
         - bearerAuth: []
+        - authCookie: []
       responses:
-        '200':
+        "200":
           description: Authenticated user profile
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserProfileResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/UserProfileResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/v1/products:
     get:
       tags: [Catalog]
       summary: List active products
       security:
         - bearerAuth: []
+        - authCookie: []
       responses:
-        '200':
+        "200":
           description: Product catalog
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProductCatalogResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                $ref: "#/components/schemas/ProductCatalogResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/v1/checkout/session:
     post:
       tags: [Checkout]
@@ -770,25 +920,26 @@ paths:
       description: Normal users only. Admin users cannot purchase products.
       security:
         - bearerAuth: []
+        - authCookie: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CheckoutSessionRequest'
+              $ref: "#/components/schemas/CheckoutSessionRequest"
       responses:
-        '201':
+        "201":
           description: Checkout session created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CheckoutSessionResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: "#/components/schemas/CheckoutSessionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/v1/invoices:
     get:
       tags: [Invoices]
@@ -796,21 +947,23 @@ paths:
       description: Returns own invoices for a user, or all invoices for an admin.
       security:
         - bearerAuth: []
+        - authCookie: []
       responses:
-        '200':
+        "200":
           description: Invoice summaries
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvoiceListResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                $ref: "#/components/schemas/InvoiceListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/v1/invoices/{id}:
     get:
       tags: [Invoices]
       summary: Get invoice detail
       security:
         - bearerAuth: []
+        - authCookie: []
       parameters:
         - name: id
           in: path
@@ -818,24 +971,25 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: Invoice detail
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvoiceDetailResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/InvoiceDetailResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/v1/receipts/{id}:
     get:
       tags: [Receipts]
       summary: Get receipt detail
       security:
         - bearerAuth: []
+        - authCookie: []
       parameters:
         - name: id
           in: path
@@ -843,24 +997,25 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: Receipt detail
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReceiptDetailResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/ReceiptDetailResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/v1/admin/users:
     get:
       tags: [Admin Users]
       summary: List active users
       security:
         - bearerAuth: []
+        - authCookie: []
       parameters:
         - name: limit
           in: query
@@ -870,47 +1025,49 @@ paths:
             default: 200
             maximum: 500
       responses:
-        '200':
+        "200":
           description: User list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AdminUserListResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: "#/components/schemas/AdminUserListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
     post:
       tags: [Admin Users]
       summary: Create admin account
       description: Creates an admin account and issues email verification OTP for account activation.
       security:
         - bearerAuth: []
+        - authCookie: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AdminCreateUserRequest'
+              $ref: "#/components/schemas/AdminCreateUserRequest"
       responses:
-        '201':
+        "201":
           description: Admin user created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AdminCreateUserResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: "#/components/schemas/AdminCreateUserResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/v1/admin/users/{id}:
     delete:
       tags: [Admin Users]
       summary: Soft-delete user
       security:
         - bearerAuth: []
+        - authCookie: []
       parameters:
         - name: id
           in: path
@@ -918,26 +1075,29 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: User soft-deleted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AdminDeleteUserResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/AdminDeleteUserResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/v1/admin/products:
     get:
       tags: [Admin Products]
-      summary: List products for admin
-      security:
-        - bearerAuth: []
+      summary: List products (public catalog)
+      description: |
+        **No authentication required.** Returns active products (same shape as the authenticated admin list).
+
+        Query parameter `include_deleted` is honored only when the request is authenticated as an **admin** (Bearer or auth cookie); otherwise it is ignored and soft-deleted rows are omitted.
+      security: []
       parameters:
         - name: include_deleted
           in: query
@@ -945,46 +1105,44 @@ paths:
           schema:
             type: boolean
       responses:
-        '200':
+        "200":
           description: Product list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AdminProductListResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: "#/components/schemas/AdminProductListResponse"
     post:
       tags: [Admin Products]
       summary: Create product
       security:
         - bearerAuth: []
+        - authCookie: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AdminProductUpsertRequest'
+              $ref: "#/components/schemas/AdminProductUpsertRequest"
       responses:
-        '201':
+        "201":
           description: Product created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IdResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: "#/components/schemas/IdResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/v1/admin/products/{id}:
     put:
       tags: [Admin Products]
       summary: Update product
       security:
         - bearerAuth: []
+        - authCookie: []
       parameters:
         - name: id
           in: path
@@ -996,61 +1154,63 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AdminProductUpsertRequest'
+              $ref: "#/components/schemas/AdminProductUpsertRequest"
       responses:
-        '200':
+        "200":
           description: Product updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IdResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: "#/components/schemas/IdResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/v1/admin/currencies:
     get:
       tags: [Admin Currencies]
       summary: List currencies
       security:
         - bearerAuth: []
+        - authCookie: []
       responses:
-        '200':
+        "200":
           description: Currency list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CurrencyListResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: "#/components/schemas/CurrencyListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
     post:
       tags: [Admin Currencies]
       summary: Create currency
       security:
         - bearerAuth: []
+        - authCookie: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CurrencyCreateRequest'
+              $ref: "#/components/schemas/CurrencyCreateRequest"
       responses:
-        '201':
+        "201":
           description: Currency created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IdResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: "#/components/schemas/IdResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/v1/admin/currencies/{id}:
     put:
       tags: [Admin Currencies]
@@ -1058,6 +1218,7 @@ paths:
       description: Currency code is immutable in this API.
       security:
         - bearerAuth: []
+        - authCookie: []
       parameters:
         - name: id
           in: path
@@ -1069,28 +1230,29 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CurrencyUpdateRequest'
+              $ref: "#/components/schemas/CurrencyUpdateRequest"
       responses:
-        '200':
+        "200":
           description: Currency updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IdResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/IdResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/v1/admin/stripe-logs:
     get:
       tags: [Admin Stripe Logs]
       summary: List Stripe logs
       security:
         - bearerAuth: []
+        - authCookie: []
       parameters:
         - name: limit
           in: query
@@ -1100,16 +1262,16 @@ paths:
             default: 100
             maximum: 500
       responses:
-        '200':
+        "200":
           description: Stripe log list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StripeLogListResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: "#/components/schemas/StripeLogListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/v1/stripe/webhook:
     post:
       tags: [Webhooks]
@@ -1129,7 +1291,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Webhook accepted
           content:
             application/json:
@@ -1146,5 +1308,5 @@ paths:
                       status:
                         type: string
                         example: processed
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        "400":
+          $ref: "#/components/responses/BadRequest"

@@ -11,6 +11,7 @@ export interface AuthUser {
 }
 
 const USER_KEY = "user";
+const TOKEN_KEY = "token";
 
 function readStoredUser(): AuthUser | null {
   const raw = localStorage.getItem(USER_KEY);
@@ -78,6 +79,7 @@ export const useAuthStore = defineStore("auth", () => {
     user.value = null;
     error.value = null;
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(TOKEN_KEY);
   }
 
   function clearError() {
