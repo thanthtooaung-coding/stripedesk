@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { computed, onBeforeUnmount, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import FormPinInput from "@/components/common/form-input/FormPinInput.vue";
 import AppButton from "@/components/ui/AppButton.vue";
@@ -24,6 +24,34 @@ const form = reactive({ code: "" });
 const fieldError = ref("");
 const submitError = ref("");
 const resendMessage = ref("");
+const resendCooldown = ref(0);
+let resendTimer: ReturnType<typeof setInterval> | null = null;
+
+const isResendDisabled = computed(
+  () => resendOtpMutation.isPending.value || resendCooldown.value > 0,
+);
+
+function stopResendTimer() {
+  if (resendTimer) {
+    clearInterval(resendTimer);
+    resendTimer = null;
+  }
+}
+
+function startResendTimer(seconds = 60) {
+  stopResendTimer();
+  resendCooldown.value = seconds;
+
+  resendTimer = setInterval(() => {
+    if (resendCooldown.value <= 1) {
+      resendCooldown.value = 0;
+      stopResendTimer();
+      return;
+    }
+
+    resendCooldown.value -= 1;
+  }, 1000);
+}
 
 function maskEmail(value: string) {
   return value
@@ -98,10 +126,15 @@ async function handleResendOtp() {
     form.code = "";
     fieldError.value = "";
     resendMessage.value = "A new OTP has been sent to your email.";
+    startResendTimer();
   } catch (error) {
     submitError.value = getApiErrorMessage(error, "Failed to resend OTP. Please try again.");
   }
 }
+
+onBeforeUnmount(() => {
+  stopResendTimer();
+});
 </script>
 
 <template>
@@ -145,10 +178,16 @@ async function handleResendOtp() {
     <button
       type="button"
       class="font-medium text-indigo-400 hover:underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-60"
-      :disabled="resendOtpMutation.isPending.value"
+      :disabled="isResendDisabled"
       @click="handleResendOtp"
     >
-      {{ resendOtpMutation.isPending.value ? "Resending..." : "Resend OTP" }}
+      {{
+        resendOtpMutation.isPending.value
+          ? "Resending..."
+          : resendCooldown > 0
+            ? `Resend OTP in ${resendCooldown}s`
+            : "Resend OTP"
+      }}
     </button>
   </p>
 
