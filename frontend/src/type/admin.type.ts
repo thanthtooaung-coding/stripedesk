@@ -37,3 +37,10 @@ export interface ApiIdEnvelope {
   success: boolean;
   data: { id: number };
 }
+
+export interface AdminStripeLog {
+  id: number;
+  event_type: string;
+  created_at: string;
+  payload: Record<string, unknown>;
+}

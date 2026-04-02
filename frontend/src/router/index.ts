@@ -41,9 +41,38 @@ const router = createRouter({
       children: [
         {
           path: "",
-          name: "admin",
-          component: () => import("@/views/AdminView.vue"),
-          meta: { requiresRole: "admin" },
+          component: () => import("@/components/layout/AdminPagesLayout.vue"),
+          children: [
+            {
+              path: "",
+              redirect: "/admin/dashboard",
+            },
+            {
+              path: "dashboard",
+              name: "admin-dashboard",
+              component: () => import("@/views/admin/AdminDashboardView.vue"),
+            },
+            {
+              path: "users",
+              name: "admin-users",
+              component: () => import("@/views/admin/AdminUsersView.vue"),
+            },
+            {
+              path: "products",
+              name: "admin-products",
+              component: () => import("@/views/admin/AdminProductsView.vue"),
+            },
+            {
+              path: "currencies",
+              name: "admin-currencies",
+              component: () => import("@/views/admin/AdminCurrenciesView.vue"),
+            },
+            {
+              path: "stripe-logs",
+              name: "admin-stripe-logs",
+              component: () => import("@/views/admin/AdminStripeLogsView.vue"),
+            },
+          ],
         },
       ],
     },
@@ -101,7 +130,7 @@ router.beforeEach((to) => {
 
   if (to.meta.public) {
     if (auth.isAuthenticated && (to.name === "login" || to.name === "register")) {
-      return auth.role === "admin" ? { name: "admin" } : { name: "dashboard" };
+      return auth.role === "admin" ? { name: "admin-dashboard" } : { name: "dashboard" };
     }
 
     return true;
@@ -120,11 +149,11 @@ router.beforeEach((to) => {
 
   if (
     auth.role === "admin" &&
-    to.name !== "admin" &&
+    !to.path.startsWith("/admin") &&
     to.path !== "/purchase/success" &&
     to.path !== "/purchase/cancel"
   ) {
-    return { name: "admin" };
+    return { name: "admin-dashboard" };
   }
 
   return true;

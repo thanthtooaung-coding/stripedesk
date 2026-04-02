@@ -5,6 +5,8 @@ import { adminService } from "@/services/admin.service";
 import { getApiErrorMessage } from "@/services/auth.service";
 import type { AdminCurrency } from "@/type/admin.type";
 import { useDebouncedRef } from "@/utils/debounce";
+import DataTable from "@/components/ui/DataTable.vue";
+import { adminCurrenciesColumns } from "@/components/admin/columns/adminCurrencies.columns";
 
 const items = ref<AdminCurrency[]>([]);
 const loading = ref(true);
@@ -216,63 +218,60 @@ onMounted(load);
       </form>
     </div>
 
-    <div class="overflow-hidden rounded-2xl border border-white/10">
-      <div class="overflow-x-auto">
-        <table class="w-full min-w-[720px] text-left text-sm">
-          <thead class="border-b border-white/10 bg-white/[0.04] text-xs uppercase tracking-wider text-slate-500">
-            <tr>
-              <th class="px-4 py-3 font-medium">Code</th>
-              <th class="px-4 py-3 font-medium">Name</th>
-              <th class="px-4 py-3 font-medium">Numeric</th>
-              <th class="px-4 py-3 font-medium">Symbol</th>
-              <th class="px-4 py-3 font-medium">Minor</th>
-              <th class="px-4 py-3 font-medium">Default</th>
-              <th class="px-4 py-3 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-white/5">
-            <tr v-if="loading">
-              <td colspan="7" class="px-4 py-12 text-center text-slate-500">
-                <Loader2 class="mx-auto h-8 w-8 animate-spin text-indigo-400/60" />
-              </td>
-            </tr>
-            <tr v-else-if="!filtered.length">
-              <td colspan="7" class="px-4 py-8 text-center text-slate-500">No currencies.</td>
-            </tr>
-            <tr
-              v-for="row in filtered"
-              v-else
-              :key="row.id"
-              class="transition hover:bg-white/[0.02]"
-            >
-              <td class="px-4 py-3 font-mono font-medium text-white">{{ row.code }}</td>
-              <td class="px-4 py-3 text-slate-200">{{ row.name }}</td>
-              <td class="px-4 py-3 text-slate-500">{{ row.numeric_code ?? "—" }}</td>
-              <td class="px-4 py-3 text-slate-400">{{ row.symbol ?? "—" }}</td>
-              <td class="px-4 py-3 text-slate-500">{{ row.minor_unit }}</td>
-              <td class="px-4 py-3">
-                <span
-                  v-if="row.is_default"
-                  class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-200"
-                >
-                  Default
-                </span>
-              </td>
-              <td class="px-4 py-3 text-right">
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1 text-xs text-slate-200 transition hover:bg-white/10"
-                  @click="openEdit(row)"
-                >
-                  <Pencil class="h-3.5 w-3.5" />
-                  Edit
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <DataTable
+      :rows="filtered"
+      :columns="adminCurrenciesColumns"
+      :loading="loading"
+      empty-text="No currencies."
+      :row-key="(row: AdminCurrency) => row.id"
+      min-width-class="min-w-[720px]"
+    >
+      <template #cell-code="{ row }">
+        <span class="font-mono font-medium text-white">{{ (row as AdminCurrency).code }}</span>
+      </template>
+
+      <template #cell-name="{ row }">
+        <span class="text-slate-200">{{ (row as AdminCurrency).name }}</span>
+      </template>
+
+      <template #cell-numeric_code="{ row }">
+        <span class="text-slate-500">{{ (row as AdminCurrency).numeric_code ?? "—" }}</span>
+      </template>
+
+      <template #cell-symbol="{ row }">
+        <span class="text-slate-400">{{ (row as AdminCurrency).symbol ?? "—" }}</span>
+      </template>
+
+      <template #cell-minor_unit="{ row }">
+        <span class="text-slate-500">{{ (row as AdminCurrency).minor_unit }}</span>
+      </template>
+
+      <template #cell-is_default="{ row }">
+        <span
+          v-if="(row as AdminCurrency).is_default"
+          class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-200"
+        >
+          Default
+        </span>
+      </template>
+
+      <template #cell-created_at="{ row }">
+        <span class="text-slate-500">{{ (row as AdminCurrency).created_at }}</span>
+      </template>
+
+      <template #cell-actions="{ row }">
+        <div class="flex justify-end">
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1 text-xs text-slate-200 transition hover:bg-white/10"
+            @click="openEdit(row as AdminCurrency)"
+          >
+            <Pencil class="h-3.5 w-3.5" />
+            Edit
+          </button>
+        </div>
+      </template>
+    </DataTable>
 
     <Teleport to="body">
       <div
