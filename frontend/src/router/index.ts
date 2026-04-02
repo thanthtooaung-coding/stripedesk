@@ -32,8 +32,15 @@ const router = createRouter({
           name: "receipts",
           component: () => import("@/views/ReceiptsView.vue"),
         },
+      ],
+    },
+    {
+      path: "/admin",
+      component: () => import("@/components/layout/AdminLayout.vue"),
+      meta: { requiresRole: "admin" },
+      children: [
         {
-          path: "admin",
+          path: "",
           name: "admin",
           component: () => import("@/views/AdminView.vue"),
           meta: { requiresRole: "admin" },
