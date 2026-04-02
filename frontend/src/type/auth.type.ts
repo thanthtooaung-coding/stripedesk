@@ -82,6 +82,10 @@ export interface ResetPasswordPayload extends TokenPayload {
   status?: string;
 }
 
+export interface RefreshPayload {
+  status: string;
+}
+
 export interface UserProfile {
   id: number;
   name: string;
@@ -99,3 +103,4 @@ export type VerifyOtpResponse = VerifyOtpTokenResponse | VerifyOtpResetResponse;
 export type ResetPasswordResponse = ApiSuccessResponse<ResetPasswordPayload>;
 export type UserProfileResponse = ApiSuccessResponse<UserProfile>;
 export type ResendOtpResponse = ApiSuccessResponse<ResendOtpPayload>;
+export type RefreshResponse = ApiSuccessResponse<RefreshPayload>;
