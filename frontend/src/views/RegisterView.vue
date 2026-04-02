@@ -14,9 +14,7 @@ import AuthSwitchLink from "@/components/ui/AuthSwitchLink.vue";
       >
         Commerce Platform
       </div>
-      <h2
-        class="text-[44px] font-extrabold text-white leading-[1.12] tracking-[-1.5px] mb-[18px]"
-      >
+      <h2 class="text-[44px] font-extrabold text-white leading-[1.12] tracking-[-1.5px] mb-[18px]">
         Get started<br />
         <span class="bg-linear-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">
           in seconds.
@@ -96,13 +94,6 @@ import AuthSwitchLink from "@/components/ui/AuthSwitchLink.vue";
     <SignUpForm />
 
     <AuthSwitchLink prompt="Already have an account?" to="/login" link-label="Sign in" />
-
-    <p class="mt-4 text-center text-sm text-[#6b6b8a]">
-      Prefer to recover an existing account?
-      <router-link to="/forgot-password" class="font-medium text-[#6c47ff] hover:underline">
-        Reset password
-      </router-link>
-    </p>
 
     <p class="mt-7 text-center text-[13px] text-[#4a4a6a]">
       Secure access powered by
