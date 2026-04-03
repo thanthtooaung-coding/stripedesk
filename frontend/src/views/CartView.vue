@@ -7,7 +7,7 @@ import { toast } from "@/lib/toast";
 import {
   useAddCartItemMutation,
   useCartQuery,
-  useCheckoutSessionMutation,
+  useCheckoutInvoiceMutation,
   useRemoveCartLineMutation,
   useUpdateCartLineMutation,
 } from "@/query/cart.query";
@@ -22,7 +22,7 @@ const router = useRouter();
 const userId = computed(() => auth.user?.id);
 
 const cartQuery = useCartQuery(userId);
-const checkoutMutation = useCheckoutSessionMutation();
+const checkoutInvoiceMutation = useCheckoutInvoiceMutation();
 const addItemMutation = useAddCartItemMutation();
 const updateLineMutation = useUpdateCartLineMutation();
 const removeLineMutation = useRemoveCartLineMutation();
@@ -39,7 +39,7 @@ const subtotal = computed(() => {
 });
 
 const cartId = computed(() => detail.value?.cart?.id);
-const checkoutPending = computed(() => checkoutMutation.isPending.value);
+const checkoutPending = computed(() => checkoutInvoiceMutation.isPending.value);
 const canCheckout = computed(
   () => cartId.value != null && lines.value.length > 0 && !checkoutPending.value,
 );
@@ -134,16 +134,35 @@ async function startCheckout() {
   if (id == null) return;
 
   try {
-    const res = await checkoutMutation.mutateAsync({ cart_id: id });
-    const url = res.data?.checkout_url;
-    if (typeof url === "string" && url.length > 0) {
-      window.location.href = url;
+    const invoiceRes = await checkoutInvoiceMutation.mutateAsync({ cart_id: id });
+    const invoiceId = resolveInvoiceId(invoiceRes);
+    if (!invoiceId) {
+      toast.error("Invoice id was not returned. Please try again.");
       return;
     }
-    toast.error("Checkout did not return a payment URL. Try again later.");
+    await router.push({ name: "invoice-detail", params: { id: String(invoiceId) } });
   } catch {
     toast.error("Could not start checkout. Please try again.");
   }
+}
+
+function resolveInvoiceId(payload: { data?: Record<string, unknown> } | null | undefined): number | null {
+  const data = payload?.data ?? {};
+  const candidates: unknown[] = [
+    data.id,
+    data.invoice_id,
+    (data.invoice as Record<string, unknown> | undefined)?.id,
+  ];
+
+  for (const value of candidates) {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string" && value.trim() !== "") {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+
+  return null;
 }
 
 function goShop() {

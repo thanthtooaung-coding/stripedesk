@@ -5,6 +5,8 @@ import type {
   CartAddItemRequest,
   CartDetailResponse,
   CartLineQuantityRequest,
+  CheckoutInvoiceRequest,
+  InvoiceApiResponse,
   CheckoutSessionRequest,
   CheckoutSessionResponse,
 } from "@/type/cart.type";
@@ -51,6 +53,18 @@ export function useAddCartItemMutation() {
 export function useCheckoutSessionMutation() {
   return useMutation<CheckoutSessionResponse, unknown, CheckoutSessionRequest>({
     mutationFn: (body) => cartService.createCheckoutSession(body),
+  });
+}
+
+export function useCheckoutInvoiceMutation() {
+  return useMutation<InvoiceApiResponse, unknown, CheckoutInvoiceRequest>({
+    mutationFn: (body) => cartService.createInvoiceFromCart(body),
+  });
+}
+
+export function usePayInvoiceMutation() {
+  return useMutation<InvoiceApiResponse, unknown, { invoiceId: number }>({
+    mutationFn: ({ invoiceId }) => cartService.payInvoice(invoiceId),
   });
 }
 

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import ProductCard from "@/components/product/ProductCard.vue";
 import { toast } from "@/lib/toast";
 import { useAddCartItemMutation } from "@/query/cart.query";
+import { useCartQuery } from "@/query/cart.query";
 import { useShopProductQuery } from "@/query/product.query";
 import { useAuthStore } from "@/stores/auth";
 import type { Product } from "@/type/product.type";
@@ -15,6 +16,14 @@ const productsQuery = useShopProductQuery();
 const addToCartMutation = useAddCartItemMutation();
 
 const products = computed(() => productsQuery.data.value?.data ?? []);
+
+const userId = computed(() => auth.user?.id ?? null);
+const cartQuery = useCartQuery(userId);
+
+const inCartProductIds = computed(() => {
+  const lines = cartQuery.data.value?.data?.lines ?? [];
+  return new Set<number>(lines.map((l) => l.product_id));
+});
 
 watch(
   () => productsQuery.isError.value,
@@ -119,6 +128,7 @@ async function handleBuyNow(product: Product) {
         :key="product.id"
         :product="product"
         variant="solid"
+        :in-cart="inCartProductIds.has(product.id)"
         @add-to-cart="handleAddToCart"
         @buy-now="handleBuyNow"
       />
