@@ -8,3 +8,7 @@ declare module "vue-router" {
     public?: boolean;
   }
 }
+
+declare module "motion-v" {
+  export const motion: Record<string, any>;
+}

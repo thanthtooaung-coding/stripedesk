@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 import UserProfileMenu from "@/components/core/UserProfileMenu.vue";
-import { FileText, LayoutDashboard, Receipt, ShoppingBag } from "@lucide/vue";
+import { FileText, LayoutDashboard, Receipt, ShoppingBag, ShoppingCart } from "@lucide/vue";
 
 interface NavItem {
   label: string;
@@ -15,6 +15,7 @@ const route = useRoute();
 const navItems = computed<NavItem[]>(() => [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
   { label: "Shop", to: "/shop", icon: ShoppingBag },
+  { label: "Cart", to: "/cart", icon: ShoppingCart },
   { label: "Invoices", to: "/invoices", icon: FileText },
   { label: "Receipts", to: "/receipts", icon: Receipt },
 ]);
