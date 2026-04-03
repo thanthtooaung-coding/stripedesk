@@ -33,7 +33,7 @@ async function handleLogout(close: () => void) {
     <template #trigger="{ open }">
       <button
         type="button"
-        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-linear-to-br from-indigo-500/80 to-violet-600/80 text-sm font-semibold text-white shadow-inner shadow-black/20 outline-none ring-indigo-400/50 transition hover:border-white/25 focus-visible:ring-2"
+        class="flex h-10 w-10 shrink-0 items-center cursor-pointer justify-center hover:border rounded-full bg-linear-to-br from-indigo-500/80 to-amber-600/80 text-sm font-semibold text-white shadow-inner shadow-black/20 outline-none ring-indigo-400/50 transition"
         :aria-expanded="open"
         aria-haspopup="menu"
         aria-label="Account menu"
@@ -50,29 +50,6 @@ async function handleLogout(close: () => void) {
         </div>
 
         <div class="my-1 h-px bg-white/10" />
-
-        <router-link
-          v-if="auth.role === 'admin'"
-          to="/admin"
-          class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10"
-          role="menuitem"
-          @click="close"
-        >
-          <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-300">
-            Admin
-          </span>
-          Admin Panel
-        </router-link>
-
-        <router-link
-          to="/dashboard"
-          class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10"
-          role="menuitem"
-          @click="close"
-        >
-          <User class="h-4 w-4 text-slate-400" />
-          Profile
-        </router-link>
         <button
           type="button"
           class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/10"
