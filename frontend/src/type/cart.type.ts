@@ -33,6 +33,11 @@ export interface CartAddItemRequest {
   quantity?: number | null;
 }
 
+/** Mirrors OpenAPI `CartLineQuantityRequest` */
+export interface CartLineQuantityRequest {
+  quantity: number;
+}
+
 export interface CheckoutSessionRequest {
   product_id?: number;
   cart_id?: number | null;

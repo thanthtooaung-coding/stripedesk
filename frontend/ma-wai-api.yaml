@@ -440,6 +440,15 @@ components:
           maximum: 25
           nullable: true
           example: 1
+    CartLineQuantityRequest:
+      type: object
+      required: [quantity]
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 25
+          example: 1
     CartLine:
       type: object
       required: [product_id, product_name, quantity, price, line_total]
@@ -1256,6 +1265,78 @@ paths:
                 $ref: "#/components/schemas/CartDetailResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/carts/{id}/items/{productId}:
+    patch:
+      tags: [Checkout]
+      summary: Update quantity for a cart line
+      description: >
+        Sets the line quantity for the given product on the cart (active, non-expired).
+        Use `DELETE` on this path to remove the line entirely.
+      security:
+        - bearerAuth: []
+        - authCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CartLineQuantityRequest"
+      responses:
+        "200":
+          description: Updated cart detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartDetailResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Checkout]
+      summary: Remove a product line from the cart
+      security:
+        - bearerAuth: []
+        - authCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated cart detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartDetailResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":

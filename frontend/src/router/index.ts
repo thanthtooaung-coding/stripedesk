@@ -10,17 +10,15 @@ const router = createRouter({
       children: [
         {
           path: "",
-          redirect: "/dashboard",
-        },
-        {
-          path: "dashboard",
-          name: "dashboard",
-          component: () => import("@/views/DashboardView.vue"),
+          name: "landing",
+          component: () => import("@/views/LandingView.vue"),
+          meta: { public: true },
         },
         {
           path: "shop",
           name: "shop",
           component: () => import("@/views/ShopView.vue"),
+          meta: { public: true },
         },
         {
           path: "cart",
@@ -125,7 +123,7 @@ const router = createRouter({
     },
     {
       path: "/:pathMatch(.*)*",
-      redirect: "/dashboard",
+      redirect: "/",
     },
   ],
 });
@@ -134,8 +132,18 @@ router.beforeEach((to) => {
   const auth = useAuthStore();
 
   if (to.meta.public) {
+    if (to.name === "landing" && auth.isAuthenticated && auth.role === "admin") {
+      return { name: "admin" };
+    }
+    if (
+      to.name === "shop" &&
+      auth.isAuthenticated &&
+      auth.role === "admin"
+    ) {
+      return { name: "admin" };
+    }
     if (auth.isAuthenticated && (to.name === "login" || to.name === "register")) {
-      return auth.role === "admin" ? { name: "admin-dashboard" } : { name: "dashboard" };
+      return auth.role === "admin" ? { name: "admin" } : { name: "shop" };
     }
 
     return true;
@@ -149,7 +157,7 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.requiresRole === "admin" && auth.role !== "admin") {
-    return { name: "dashboard" };
+    return { name: "shop" };
   }
 
   if (
