@@ -2,6 +2,7 @@ import { api } from "@/app/api/api";
 import type {
   AdminCurrency,
   AdminProduct,
+  AdminStripeLog,
   AdminUser,
   ApiIdEnvelope,
   ApiListEnvelope,
@@ -85,5 +86,12 @@ export const adminService = {
   ) {
     const { data } = await api.put<ApiIdEnvelope>(`/admin/currencies/${id}`, body);
     return data;
+  },
+
+  async listStripeLogs(limit = 100) {
+    const { data } = await api.get<ApiListEnvelope<AdminStripeLog[]>>("/admin/stripe-logs", {
+      params: { limit },
+    });
+    return data.data;
   },
 };

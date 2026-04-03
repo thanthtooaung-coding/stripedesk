@@ -7,6 +7,8 @@ import { getApiErrorMessage } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth";
 import type { AdminUser } from "@/type/admin.type";
 import { useDebouncedRef } from "@/utils/debounce";
+import DataTable from "@/components/ui/DataTable.vue";
+import { adminUsersColumns } from "@/components/admin/columns/adminUsers.columns";
 
 const auth = useAuthStore();
 const items = ref<AdminUser[]>([]);
@@ -144,65 +146,56 @@ onMounted(load);
       </form>
     </div>
 
-    <div class="overflow-hidden rounded-2xl border border-white/10">
-      <div class="overflow-x-auto">
-        <table class="w-full min-w-[640px] text-left text-sm">
-          <thead class="border-b border-white/10 bg-white/[0.04] text-xs uppercase tracking-wider text-slate-500">
-            <tr>
-              <th class="px-4 py-3 font-medium">ID</th>
-              <th class="px-4 py-3 font-medium">Name</th>
-              <th class="px-4 py-3 font-medium">Email</th>
-              <th class="px-4 py-3 font-medium">Role</th>
-              <th class="px-4 py-3 font-medium">Created</th>
-              <th class="px-4 py-3 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-white/5">
-            <tr v-if="loading">
-              <td colspan="6" class="px-4 py-12 text-center text-slate-500">
-                <Loader2 class="mx-auto h-8 w-8 animate-spin text-indigo-400/60" />
-              </td>
-            </tr>
-            <tr v-else-if="!filtered.length">
-              <td colspan="6" class="px-4 py-8 text-center text-slate-500">No users found.</td>
-            </tr>
-            <tr
-              v-for="row in filtered"
-              v-else
-              :key="row.id"
-              class="transition hover:bg-white/[0.02]"
-            >
-              <td class="px-4 py-3 font-mono text-slate-400">{{ row.id }}</td>
-              <td class="px-4 py-3 font-medium text-white">{{ row.name }}</td>
-              <td class="px-4 py-3 text-slate-300">{{ row.email }}</td>
-              <td class="px-4 py-3">
-                <span
-                  class="rounded-full border px-2 py-0.5 text-xs uppercase tracking-wide"
-                  :class="
-                    row.role === 'admin'
-                      ? 'border-indigo-400/40 bg-indigo-500/15 text-indigo-200'
-                      : 'border-white/10 bg-white/5 text-slate-300'
-                  "
-                >
-                  {{ row.role }}
-                </span>
-              </td>
-              <td class="px-4 py-3 text-slate-400">{{ row.created_at }}</td>
-              <td class="px-4 py-3 text-right">
-                <button
-                  type="button"
-                  :disabled="row.id === auth.user?.id"
-                  class="inline-flex items-center gap-1 rounded-lg border border-red-500/20 px-2 py-1 text-xs text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-30"
-                  @click="confirmDelete(row)"
-                >
-                  <Trash2 class="h-3.5 w-3.5" />
-                  Delete
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <DataTable
+      :rows="filtered"
+      :columns="adminUsersColumns"
+      :loading="loading"
+      empty-text="No users found."
+      :row-key="(row: AdminUser) => row.id"
+      min-width-class="min-w-[640px]"
+    >
+      <template #cell-id="{ row }">
+        <span class="font-mono text-slate-400">{{ (row as AdminUser).id }}</span>
+      </template>
+
+      <template #cell-name="{ row }">
+        <span class="font-medium text-white">{{ (row as AdminUser).name }}</span>
+      </template>
+
+      <template #cell-email="{ row }">
+        <span class="text-slate-300">{{ (row as AdminUser).email }}</span>
+      </template>
+
+      <template #cell-role="{ row }">
+        <span
+          class="rounded-full border px-2 py-0.5 text-xs uppercase tracking-wide"
+          :class="
+            (row as AdminUser).role === 'admin'
+              ? 'border-indigo-400/40 bg-indigo-500/15 text-indigo-200'
+              : 'border-white/10 bg-white/5 text-slate-300'
+          "
+        >
+          {{ (row as AdminUser).role }}
+        </span>
+      </template>
+
+      <template #cell-created_at="{ row }">
+        <span class="text-slate-400">{{ (row as AdminUser).created_at }}</span>
+      </template>
+
+      <template #cell-actions="{ row }">
+        <div class="flex justify-end">
+          <button
+            type="button"
+            :disabled="(row as AdminUser).id === auth.user?.id"
+            class="inline-flex items-center gap-1 rounded-lg border border-red-500/20 px-2 py-1 text-xs text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-30"
+            @click="confirmDelete(row as AdminUser)"
+          >
+            <Trash2 class="h-3.5 w-3.5" />
+            Delete
+          </button>
+        </div>
+      </template>
+    </DataTable>
   </div>
 </template>

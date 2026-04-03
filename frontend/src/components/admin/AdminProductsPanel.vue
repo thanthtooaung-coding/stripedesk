@@ -6,6 +6,8 @@ import { adminService } from "@/services/admin.service";
 import { getApiErrorMessage } from "@/services/auth.service";
 import type { AdminCurrency, AdminProduct } from "@/type/admin.type";
 import { useDebouncedRef } from "@/utils/debounce";
+import DataTable from "@/components/ui/DataTable.vue";
+import { adminProductsColumns } from "@/components/admin/columns/adminProducts.columns";
 
 const items = ref<AdminProduct[]>([]);
 const currencies = ref<AdminCurrency[]>([]);
@@ -41,6 +43,10 @@ const filtered = computed(() => {
     return blob.includes(q);
   });
 });
+
+const tableColumns = computed(() =>
+  includeDeleted.value ? adminProductsColumns : adminProductsColumns.filter((c) => c.id !== "status"),
+);
 
 async function loadCurrencies() {
   try {
@@ -207,76 +213,69 @@ onMounted(async () => {
       </form>
     </div>
 
-    <div class="overflow-hidden rounded-2xl border border-white/10">
-      <div class="overflow-x-auto">
-        <table class="w-full min-w-[800px] text-left text-sm">
-          <thead class="border-b border-white/10 bg-white/[0.04] text-xs uppercase tracking-wider text-slate-500">
-            <tr>
-              <th class="px-4 py-3 font-medium">ID</th>
-              <th class="px-4 py-3 font-medium">Name</th>
-              <th class="px-4 py-3 font-medium">Price</th>
-              <th class="px-4 py-3 font-medium">CCY</th>
-              <th class="px-4 py-3 font-medium">Stripe price</th>
-              <th v-if="includeDeleted" class="px-4 py-3 font-medium">Status</th>
-              <th class="px-4 py-3 font-medium">Created</th>
-              <th class="px-4 py-3 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-white/5">
-            <tr v-if="loading">
-              <td :colspan="includeDeleted ? 8 : 7" class="px-4 py-12 text-center text-slate-500">
-                <Loader2 class="mx-auto h-8 w-8 animate-spin text-indigo-400/60" />
-              </td>
-            </tr>
-            <tr v-else-if="!filtered.length">
-              <td :colspan="includeDeleted ? 8 : 7" class="px-4 py-8 text-center text-slate-500">
-                No products.
-              </td>
-            </tr>
-            <tr
-              v-for="row in filtered"
-              v-else
-              :key="row.id"
-              class="transition hover:bg-white/[0.02]"
-            >
-              <td class="px-4 py-3 font-mono text-slate-400">{{ row.id }}</td>
-              <td class="px-4 py-3 font-medium text-white">{{ row.name }}</td>
-              <td class="px-4 py-3 text-slate-300">{{ row.price }}</td>
-              <td class="px-4 py-3 text-slate-400">{{ row.currency_code }}</td>
-              <td class="max-w-[140px] truncate px-4 py-3 font-mono text-xs text-slate-500">
-                {{ row.stripe_price_id ?? "—" }}
-              </td>
-              <td v-if="includeDeleted" class="px-4 py-3">
-                <span
-                  v-if="row.deleted_at"
-                  class="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs text-red-200"
-                >
-                  Deleted
-                </span>
-                <span
-                  v-else
-                  class="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-200"
-                >
-                  Active
-                </span>
-              </td>
-              <td class="px-4 py-3 text-slate-500">{{ row.created_at }}</td>
-              <td class="px-4 py-3 text-right">
-                <button
-                  type="button"
-                  :disabled="!!row.deleted_at"
-                  class="inline-flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1 text-xs text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
-                  @click="openEdit(row)"
-                >
-                  <Pencil class="h-3.5 w-3.5" />
-                  Edit
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <DataTable
+      :rows="filtered"
+      :columns="tableColumns"
+      :loading="loading"
+      empty-text="No products."
+      :row-key="(row: AdminProduct) => row.id"
+      min-width-class="min-w-[800px]"
+    >
+      <template #cell-id="{ row }">
+        <span class="font-mono text-slate-400">{{ (row as AdminProduct).id }}</span>
+      </template>
+
+      <template #cell-name="{ row }">
+        <span class="font-medium text-white">{{ (row as AdminProduct).name }}</span>
+      </template>
+
+      <template #cell-price="{ row }">
+        <span class="text-slate-300">{{ (row as AdminProduct).price }}</span>
+      </template>
+
+      <template #cell-currency_code="{ row }">
+        <span class="text-slate-400">{{ (row as AdminProduct).currency_code }}</span>
+      </template>
+
+      <template #cell-stripe_price_id="{ row }">
+        <span class="max-w-[140px] truncate font-mono text-xs text-slate-500">
+          {{ (row as AdminProduct).stripe_price_id ?? "—" }}
+        </span>
+      </template>
+
+      <template #cell-status="{ row }">
+        <span
+          v-if="(row as AdminProduct).deleted_at"
+          class="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs text-red-200"
+        >
+          Deleted
+        </span>
+        <span
+          v-else
+          class="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-200"
+        >
+          Active
+        </span>
+      </template>
+
+      <template #cell-created_at="{ row }">
+        <span class="text-slate-500">{{ (row as AdminProduct).created_at }}</span>
+      </template>
+
+      <template #cell-actions="{ row }">
+        <div class="flex justify-end">
+          <button
+            type="button"
+            :disabled="!!(row as AdminProduct).deleted_at"
+            class="inline-flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1 text-xs text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
+            @click="openEdit(row as AdminProduct)"
+          >
+            <Pencil class="h-3.5 w-3.5" />
+            Edit
+          </button>
+        </div>
+      </template>
+    </DataTable>
 
     <Teleport to="body">
       <div
