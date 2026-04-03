@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { Product } from "@/type/product.type";
+import { ref } from "vue";
+import AlertModalBox from "@/components/common/AlertModalBox.vue";
 import AppButton from "../ui/AppButton.vue";
 
 type Variant = "transparent" | "solid";
@@ -27,7 +29,13 @@ function handleAddToCart() {
   emit("add-to-cart", props.product);
 }
 
-function handleBuyNow() {
+const buyNowOpen = ref(false);
+
+function openBuyNowConfirm() {
+  buyNowOpen.value = true;
+}
+
+function confirmBuyNow() {
   emit("buy-now", props.product);
 }
 </script>
@@ -67,7 +75,16 @@ function handleBuyNow() {
         Add to cart
       </button>
 
-      <AppButton class="w-full text-sm" @click="handleBuyNow"> Buy now </AppButton>
+      <AppButton class="w-full text-sm" @click="openBuyNowConfirm"> Buy now </AppButton>
     </div>
+
+    <AlertModalBox
+      v-model="buyNowOpen"
+      title="Confirm purchase"
+      :description="`Buy ${product.name} for ${formatPrice()}? You will be taken to your cart to complete checkout.`"
+      confirm-text="Continue"
+      cancel-text="Not now"
+      @confirm="confirmBuyNow"
+    />
   </article>
 </template>

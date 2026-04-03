@@ -3,6 +3,7 @@ import { api } from "@/app/api/api";
 import type {
   CartAddItemRequest,
   CartDetailResponse,
+  CartLineQuantityRequest,
   CheckoutSessionRequest,
   CheckoutSessionResponse,
 } from "@/type/cart.type";
@@ -23,6 +24,19 @@ export const cartService = {
 
   async addItemToUserCart(userId: number, body: CartAddItemRequest) {
     const { data } = await api.post<CartDetailResponse>(`/users/${userId}/cart/items`, body);
+    return data;
+  },
+
+  async updateCartLineQuantity(cartId: number, productId: number, body: CartLineQuantityRequest) {
+    const { data } = await api.patch<CartDetailResponse>(
+      `/carts/${cartId}/items/${productId}`,
+      body,
+    );
+    return data;
+  },
+
+  async removeCartLine(cartId: number, productId: number) {
+    const { data } = await api.delete<CartDetailResponse>(`/carts/${cartId}/items/${productId}`);
     return data;
   },
 
